@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }} - MuseScore Library</title>
+<style>
+h1 {
+	text-align: center;
+}
+#gallery-container {
+	display: flex;
+	flex-wrap: wrap;
+	padding: 1em;
+}
+@media (min-width:768px) {
+	.score {
+		margin: 1em;
+		padding: 0.5em;
+		width: 40%;
+	}
+}
+@media (min-width:960px) {
+	.score {
+		margin: 1em;
+		padding: 0.5em;
+		width: 20%;
+	}
+}
+@media (max-width:767px) {
+	.score {
+		margin: 1em 0;
+		padding: 0.5em;
+		width: 100%;
+	}
+}
+a {
+	color: #2e68c0;
+	text-decoration: none;
+}
+a:hover {
+	color: #123569;
+}
+.img-container {
+	border: 1px solid #cfd8e3;
+	border-radius: 4px;
+	display: inline-block;
+	padding: 3px;
+}
+.thumbnail {
+	max-width: 100%;
+	max-height: 400px;
+}
+.title {
+	margin: 0.4em 0;
+}
+.score p {
+	margin: 0.2em 0;
+}
+.meta {
+	color: #64748b;
+	font-size: 0.85em;
+}
+audio {
+	max-width: 100%;
+}
+.playing {
+	background-color: #f7f9fc;
+}
+</style>
+</head>
+<body>
+<h1>MuseScore Library</h1>
+<form id="search" method="GET" action="./">
+<p><label>Search:
+<input id="search-q" name="q" type="text">
+</label>
+<input type="submit" value="&#x1F50D;">
+</p>
+</form>
+<section id="gallery">
+<h2>{{ title }}</h2>
+<div id="gallery-container">
+{% for score in scores %}
+<article class="score" id="score-{{ score.id }}">
+	<div class="img-container"><img class="thumbnail" src="./download/{{ score.id }}.png" loading="lazy"></div>
+	<h3 class="title"><a href="{{ score.url }}">{{ score.title }}</a></h3>
+	<p class="author"><a href="./user/{{ score.authorUserId }}">{{ score.author }}</a></p>
+	<p class="meta">{{ score.instrumentsNames|instruments(score.partsNames) }}</p>
+	<p class="meta">
+		{{ score.partsCount }} part •
+		{{ score.pagesCount }} pages •
+		{{ score.duration|time_format }}</p>
+<!--
+	<p class="updated"><a href="{{ score.url }}">{{ score.timeUpdated }}</a></p>
+-->
+	<p>
+		<a href="./pdfjs/web/viewer.html?file=/download/{{ score.id }}.pdf" target="_blank">Preview</a> |
+		<a href="./download/{{ score.id }}.mscz">MSCZ</a> |
+		<a href="./download/{{ score.id }}.pdf">PDF</a>
+	</p>
+	<p><audio id="audio-{{ score.id }}" controls preload="none" src="./download/{{ score.id }}.ogg"></p>
+	{% if score.summary %}
+	<p class="summary">{{ score.summary|nl2br }}</p>
+	{% endif %}
+	{% if score.description and score.description != score.summary %}
+	<p class="description">{{ score.description|nl2br }}</p>
+	{% endif %}
+</article>
+{% endfor %}
+</div>
+</section>
+<script>
+document.addEventListener('play', function(e) {
+	var id = e.target.getAttribute('id').split('-')[1];
+    var audios = document.getElementsByTagName('audio');
+    for (var i = 0, len = audios.length; i < len; i++) {
+        if (audios[i] != e.target) {
+            audios[i].pause();
+        }
+    }
+    document.getElementById('score-' + id).classList.add("playing");
+}, true);
+document.addEventListener('pause', function(e) {
+	var id = e.target.getAttribute('id').split('-')[1];
+    document.getElementById('score-' + id).classList.remove("playing");
+}, true);
+document.addEventListener('ended', function(e) {
+	var id = e.target.getAttribute('id').split('-')[1];
+    var next_score = document.getElementById('score-' + id).nextElementSibling;
+    if (next_score) {
+		var next_id = next_score.getAttribute('id').split('-')[1];
+		document.getElementById('audio-' + next_id).play();
+	}
+}, true);
+</script>
+</body></html>
